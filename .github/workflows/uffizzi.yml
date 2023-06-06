@@ -1,0 +1,16 @@
+name: Create UffizziCluster on PullRequest
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: deploy to cluster
+      uses: steebchen/kubectl@v2.0.0
+      with: # defaults to latest kubectl binary version
+        config: ${{ secrets.KUBECONFIG }}
+        command: get namespaces
