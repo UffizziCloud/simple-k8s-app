@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: echo
-        image: docker.io/uffizzi/echo-test:v1.0.0
+        image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
         ports:
         - containerPort: 1323
