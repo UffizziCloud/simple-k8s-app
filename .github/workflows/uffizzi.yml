@@ -54,5 +54,5 @@ jobs:
     # Deploy the Docker image to the GKE cluster
     - name: UffizziCluster + Helm
       run: |-
-        helm template test ./chart
-        kubectl get namespaces
+        helm template test ./chart > manifests.yml
+        kubectl apply -f manifests.yml
