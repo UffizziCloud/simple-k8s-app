@@ -52,6 +52,7 @@ jobs:
         gcloud container clusters get-credentials uffizzi-client-clone-1 --zone us-central1 --project uffizzi-pro-qa-gke
 
     # Deploy the Docker image to the GKE cluster
-    - name: Deploy
+    - name: UffizziCluster + Helm
       run: |-
+        helm template test ./chart
         kubectl get namespaces
