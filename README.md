@@ -1,3 +1,3 @@
 # simple-k8s-app
 
-test
+Simple k8s app to prototype uffizzi cluster creation
