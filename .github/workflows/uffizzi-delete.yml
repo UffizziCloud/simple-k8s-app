@@ -54,5 +54,6 @@ jobs:
     # Deploy the Docker image to the GKE cluster
     - name: UffizziCluster + Helm
       run: |-
-        helm template test ./chart > manifests.yml
-        kubectl delete -f manifests.yml
+        export HELM_MANIFEST=$(helm template test ./chart)
+        yq e '.spec.manifests = strenv(HELM_MANIFEST)' uffizzi-cluster.yml > uffizzi-cluster-configured.yml
+        kubectl delete -f uffizzi-cluster-configured.yml

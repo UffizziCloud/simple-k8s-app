@@ -1,0 +1,35 @@
+kind: UffizziCluster
+apiVersion: uffizzi.com/v1alpha1
+metadata:
+  name: test-cluster
+spec:
+  ingress:
+    class: "nginx"
+    host: deleteme2023.uffizzi.cloud
+    services:
+    - name: kubernetes-dashboard
+      namespace: kubernetes-dashboard
+      port: 443
+      ingressAnnotations:
+        nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+        ingress.kubernetes.io/proxy-body-size: "1024m"
+        nginx.ingress.kubernetes.io/proxy-body-size: "1024m"
+        nginx.ingress.kubernetes.io/secure-backends: "true"
+        cert-manager.io/cluster-issuer: "my-uffizzi-letsencrypt"
+  helm:
+  - chart:
+      name: kubernetes-dashboard
+      repo: https://kubernetes.github.io/dashboard/
+    release:
+      name: kubernetes-dashboard
+      namespace: kubernetes-dashboard
+    values: |
+      extraArgs:
+        - --enable-skip-login
+        - --enable-insecure-login
+        - --system-banner="This is a Uffizzi Virtual Cluster"
+      rbac:
+        create: true
+        clusterReadOnlyRole: true
+  manifests: |
+    $HELM_MANIFEST
