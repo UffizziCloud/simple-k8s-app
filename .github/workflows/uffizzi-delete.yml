@@ -56,4 +56,4 @@ jobs:
       run: |-
         # export HELM_MANIFEST=$(helm template test ./chart)
         # yq e '.spec.manifests = strenv(HELM_MANIFEST)' uffizzi-cluster.yml > uffizzi-cluster-configured.yml
-        kubectl delete -f uffizzi-cluster-configured.yml
+        kubectl delete -f uffizzi-cluster.yml
