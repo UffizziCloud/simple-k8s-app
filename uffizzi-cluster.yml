@@ -31,5 +31,5 @@ spec:
       rbac:
         create: true
         clusterReadOnlyRole: true
-  manifests: |
-    $HELM_MANIFEST
+  # manifests: |
+  #   HELM_MANIFEST

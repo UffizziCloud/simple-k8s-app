@@ -15,8 +15,8 @@ env:
   USE_GKE_GCLOUD_AUTH_PLUGIN: true
 
 jobs:
-  test-kubectl:
-    name: Test Kubectl
+  create-uffizzi-cluster:
+    name: Create Uffizzi Cluster
     runs-on: ubuntu-latest
 
     steps:
@@ -54,6 +54,6 @@ jobs:
     # Deploy the Docker image to the GKE cluster
     - name: UffizziCluster + Helm
       run: |-
-        export HELM_MANIFEST=$(helm template test ./chart)
-        yq e '.spec.manifests = strenv(HELM_MANIFEST)' uffizzi-cluster.yml > uffizzi-cluster-configured.yml
+        # export HELM_MANIFEST=$(helm template test ./chart)
+        # yq e '.spec.manifests = strenv(HELM_MANIFEST)' uffizzi-cluster.yml > uffizzi-cluster-configured.yml
         kubectl apply -f uffizzi-cluster-configured.yml
