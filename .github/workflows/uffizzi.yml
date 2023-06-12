@@ -54,6 +54,10 @@ jobs:
     # Deploy the Docker image to the GKE cluster
     - name: UffizziCluster + Helm
       run: |-
-        # export HELM_MANIFEST=$(helm template test ./chart)
-        # yq e '.spec.manifests = strenv(HELM_MANIFEST)' uffizzi-cluster.yml > uffizzi-cluster-configured.yml
-        kubectl apply -f uffizzi-cluster.yml
+        ## Set Namespace
+        export PR_NUMBER=${{github.ref_name}}
+        export NAMESPACE=pr-simple-k8s-app-$PR_NUMBER
+        export HELM_MANIFEST=$(helm template $PR_NUMBER ./chart -n $NAMESPACE)
+        yq e '.spec.manifests = strenv(HELM_MANIFEST) |
+          .metadata.namespace = strenv(NAMESPACE)' uffizzi-cluster.yml > uffizzi-cluster-configured.yml
+        kubectl apply -f uffizzi-cluster-configured.yml
