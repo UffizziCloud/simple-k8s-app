@@ -55,9 +55,10 @@ jobs:
     - name: UffizziCluster + Helm
       run: |-
         ## Set Namespace
-        export PR_NUMBER=${{github.ref_name}}
+        export PR_NUMBER=${{github.event.number}}
         export NAMESPACE=pr-simple-k8s-app-$PR_NUMBER
         export HELM_MANIFEST=$(helm template $PR_NUMBER ./chart -n $NAMESPACE)
         yq e '.spec.manifests = strenv(HELM_MANIFEST) |
           .metadata.namespace = strenv(NAMESPACE)' uffizzi-cluster.yml > uffizzi-cluster-configured.yml
+        kubectl create namespace $NAMESPACE
         kubectl apply -f uffizzi-cluster-configured.yml
