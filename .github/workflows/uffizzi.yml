@@ -64,16 +64,19 @@ jobs:
       if: ${{ github.event.action == 'synchronize' }}
       run: |-
         echo TODO
-        kubectl get namespace
+        export UCLUSTER_NAME=`kubectl get namespace --selector="github.com/pull_request.number=${PR_NUMBER}" --output=jsonpath='{.items[*].metadata.name}'`
+        echo ${UCLUSTER_NAME} identified
         envsubst < uffizzi-cluster.template.yaml > uffizzi-cluster.rendered.yaml
         cat uffizzi-cluster.rendered.yaml #debug
-        kubectl apply -f uffizzi-cluster.rendered.yaml
+        #kubectl apply -f uffizzi-cluster.rendered.yaml
         # TODO: fetch and decode kubeconfig
         # TODO: re-deploy sample app
 
     - name: uffizzi cluster delete
       if: ${{ github.event.action == 'closed' }}
       run: |-
+        export UCLUSTER_NAME=`kubectl get namespace --selector="github.com/pull_request.number=${PR_NUMBER}" --output=jsonpath='{.items[*].metadata.name}'`
+        echo ${UCLUSTER_NAME} identified
         kubectl delete namespace ${UCLUSTER_NAME}
 
     # Deploy the Docker image to the GKE cluster
