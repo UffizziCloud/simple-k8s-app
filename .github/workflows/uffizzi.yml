@@ -65,6 +65,9 @@ jobs:
       run: |-
         echo TODO
         kubectl get namespace
+        envsubst < uffizzi-cluster.template.yaml > uffizzi-cluster.rendered.yaml
+        cat uffizzi-cluster.rendered.yaml #debug
+        kubectl apply -f uffizzi-cluster.rendered.yaml
         # TODO: fetch and decode kubeconfig
         # TODO: re-deploy sample app
 
