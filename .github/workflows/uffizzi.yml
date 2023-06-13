@@ -1,4 +1,4 @@
-name: Create UffizziCluster on PullRequest
+name: Manage UffizziCluster for Pull Requests
 
 permissions:
   id-token: write
@@ -41,16 +41,17 @@ jobs:
         credentials_json: '${{ secrets.GKE_SA_KEY }}'
         project_id: ${{ env.PROJECT_ID }}
 
-    # Setup gcloud CLI
-    - uses: google-github-actions/setup-gcloud@v1
+    - name: Set up `gcloud` CLI
+      uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ env.PROJECT_ID }}
         install_components: 'gke-gcloud-auth-plugin'
 
-    - run: |-
+    - name: Get credentials to connect to host GKE Cluster
+      run: |-
         gcloud container clusters get-credentials ${GKE_CLUSTER} --zone ${GKE_ZONE} --project ${PROJECT_ID}
 
-    - name: create
+    - name: uffizzi cluster create
       if: ${{ endsWith(github.event.action, 'opened') }} # "opened" or "reopened"
       run: |-
         envsubst < uffizzi-cluster.template.yaml > uffizzi-cluster.rendered.yaml
@@ -59,7 +60,7 @@ jobs:
         # TODO: fetch and decode kubeconfig
         # TODO: deploy sample app
 
-    - name: update
+    - name: uffizzi cluster connect
       if: ${{ github.event.action == 'synchronize' }}
       run: |-
         echo TODO
@@ -67,7 +68,7 @@ jobs:
         # TODO: fetch and decode kubeconfig
         # TODO: re-deploy sample app
 
-    - name: destroy
+    - name: uffizzi cluster delete
       if: ${{ github.event.action == 'closed' }}
       run: |-
         kubectl delete namespace ${UCLUSTER_NAME}

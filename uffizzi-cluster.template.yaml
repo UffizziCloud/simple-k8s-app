@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   name: ${UCLUSTER_NAME}
   labels:
-    github.com/pull_request.number: ${PR_NUMBER}
+    github.com/pull_request.number: "${PR_NUMBER}"
     app.uffizzi.com/project-id: "3255"
     app.uffizzi.com/project-name: "Example Project"
     app.uffizzi.com/user-id: "3465"
@@ -14,7 +14,7 @@ kind: UffizziCluster
 metadata:
   name: ${UCLUSTER_NAME}
   labels:
-    github.com/pull_request.number: ${PR_NUMBER}
+    github.com/pull_request.number: "${PR_NUMBER}"
     app.uffizzi.com/project-id: "3255"
     app.uffizzi.com/project-name: "Example Project"
     app.uffizzi.com/user-id: "3465"
