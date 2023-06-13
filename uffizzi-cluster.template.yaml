@@ -7,7 +7,7 @@ metadata:
     app.uffizzi.com/project-id: "3255"
     app.uffizzi.com/project-name: "Example_Project"
     app.uffizzi.com/user-id: "3465"
-    app.uffizzi.com/user-email: "uffizzi.user@example.com"
+    app.uffizzi.com/user-name: "uffizzi.userATexample.com"
 ---
 apiVersion: uffizzi.com/v1alpha1
 kind: UffizziCluster
@@ -18,7 +18,7 @@ metadata:
     app.uffizzi.com/project-id: "3255"
     app.uffizzi.com/project-name: "Example_Project"
     app.uffizzi.com/user-id: "3465"
-    app.uffizzi.com/user-email: "uffizzi.user@example.com"
+    app.uffizzi.com/user-name: "uffizzi.userATexample.com"
 spec:
   ingress:
     class: "nginx"
