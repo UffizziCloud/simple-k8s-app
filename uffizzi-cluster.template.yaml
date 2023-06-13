@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${UCLUSTER_NAME}
+  labels:
+    ${UCLUSTER_LABELS}
+---
+apiVersion: uffizzi.com/v1alpha1
+kind: UffizziCluster
+metadata:
+  name: ${UCLUSTER_NAME}
+spec:
+  ingress:
+    class: "nginx"
+    host: ${UCLUSTER_NAME}.${GKE_CLUSTER}.app.qa-gke.uffizzi.com
