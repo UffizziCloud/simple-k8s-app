@@ -3,12 +3,14 @@ kind: Namespace
 metadata:
   name: ${UCLUSTER_NAME}
   labels:
-    ${UCLUSTER_LABELS}
+${UCLUSTER_LABELS}
 ---
 apiVersion: uffizzi.com/v1alpha1
 kind: UffizziCluster
 metadata:
   name: ${UCLUSTER_NAME}
+  labels:
+${UCLUSTER_LABELS}
 spec:
   ingress:
     class: "nginx"
