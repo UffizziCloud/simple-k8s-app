@@ -23,12 +23,7 @@ env:
 
   # In practice, clusters will probably get a unique ID and the workflow will identify them using metadata.
   UCLUSTER_NAME: cluster-${{ github.run_id }}
-  UCLUSTER_LABELS: |0
-    github.com/pull_request.number: ${{ github.event.number }}
-    app.uffizzi.com/project-id: "3255"
-    app.uffizzi.com/project-name: "Example Project"
-    app.uffizzi.com/user-id: "3465"
-    app.uffizzi.com/user-email: "user+uffizzi@example.com"
+  PR_NUMBER: ${{ github.event.number }}
 
 jobs:
   create-uffizzi-cluster:
@@ -53,7 +48,7 @@ jobs:
         install_components: 'gke-gcloud-auth-plugin'
 
     - run: |-
-        gcloud container clusters get-credentials ${GKE_CLUSTER} --zone us-central1 --project uffizzi-pro-qa-gke
+        gcloud container clusters get-credentials ${GKE_CLUSTER} --zone ${GKE_ZONE} --project ${PROJECT_ID}
 
     - name: create
       if: ${{ endsWith(github.event.action, 'opened') }} # "opened" or "reopened"
@@ -64,10 +59,11 @@ jobs:
         # TODO: fetch and decode kubeconfig
         # TODO: deploy sample app
 
-    - name: connect
+    - name: update
       if: ${{ github.event.action == 'synchronize' }}
       run: |-
         echo TODO
+        kubectl get namespace
         # TODO: fetch and decode kubeconfig
         # TODO: re-deploy sample app
 

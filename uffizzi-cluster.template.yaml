@@ -3,14 +3,22 @@ kind: Namespace
 metadata:
   name: ${UCLUSTER_NAME}
   labels:
-${UCLUSTER_LABELS}
+    github.com/pull_request.number: ${PR_NUMBER}
+    app.uffizzi.com/project-id: "3255"
+    app.uffizzi.com/project-name: "Example Project"
+    app.uffizzi.com/user-id: "3465"
+    app.uffizzi.com/user-email: "user+uffizzi@example.com"
 ---
 apiVersion: uffizzi.com/v1alpha1
 kind: UffizziCluster
 metadata:
   name: ${UCLUSTER_NAME}
   labels:
-${UCLUSTER_LABELS}
+    github.com/pull_request.number: ${PR_NUMBER}
+    app.uffizzi.com/project-id: "3255"
+    app.uffizzi.com/project-name: "Example Project"
+    app.uffizzi.com/user-id: "3465"
+    app.uffizzi.com/user-email: "user+uffizzi@example.com"
 spec:
   ingress:
     class: "nginx"
