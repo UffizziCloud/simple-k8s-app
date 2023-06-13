@@ -65,7 +65,7 @@ jobs:
         gcloud container clusters get-credentials ${GKE_CLUSTER} --zone us-central1 --project uffizzi-pro-qa-gke
 
     - name: create
-      if: ${{ endsWith(github.event.action, "opened") }} # "opened" or "reopened"
+      if: ${{ endsWith(github.event.action, 'opened') }} # "opened" or "reopened"
       run: |-
         envsubst < uffizzi-cluster.template.yaml > uffizzi-cluster.rendered.yaml
         cat uffizzi-cluster.rendered.yaml #debug
@@ -74,14 +74,14 @@ jobs:
         # TODO: deploy sample app
 
     - name: connect
-      if: ${{ github.event.action = 'synchronize' }}
+      if: ${{ github.event.action == 'synchronize' }}
       run: |-
         echo TODO
         # TODO: fetch and decode kubeconfig
         # TODO: re-deploy sample app
 
     - name: destroy
-      if: ${{ github.event.action = 'closed' }}
+      if: ${{ github.event.action == 'closed' }}
       run: |-
         kubectl delete namespace ${UCLUSTER_NAME}
 
