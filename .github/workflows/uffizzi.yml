@@ -28,31 +28,28 @@ env:
 jobs:
   build:
     name: Build and Push Image
-    #if: ${{ github.event.action != 'closed' }}
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-
-    - name: build
-      - name: Generate UUID image name
-        id: uuid
-        run: echo "UUID_RESULT=$(uuidgen)" >> $GITHUB_ENV
-      - name: Docker metadata
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          # An anonymous, emphemeral registry built on ttl.sh
-          images: registry.uffizzi.com/${{ env.UUID_RESULT }}
-          tags: type=raw,value=24h
-      - name: Build and Push Image to Uffizzi Ephemeral Registry
-        uses: docker/build-push-action@v3
-        with:
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          context: .
+    - name: Generate UUID image name
+      id: uuid
+      run: echo "UUID_RESULT=$(uuidgen)" >> $GITHUB_ENV
+    - name: Docker metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        # An anonymous, emphemeral registry built on ttl.sh
+        images: registry.uffizzi.com/${{ env.UUID_RESULT }}
+        tags: type=raw,value=24h
+    - name: Build and Push Image to Uffizzi Ephemeral Registry
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        context: .
 
   create-uffizzi-cluster:
     name: Manage Uffizzi Cluster
