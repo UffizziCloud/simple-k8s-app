@@ -26,9 +26,38 @@ env:
   PR_NUMBER: ${{ github.event.number }}
 
 jobs:
+  build:
+    name: Build and Push Image
+    #if: ${{ github.event.action != 'closed' }}
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: build
+      - name: Generate UUID image name
+        id: uuid
+        run: echo "UUID_RESULT=$(uuidgen)" >> $GITHUB_ENV
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          # An anonymous, emphemeral registry built on ttl.sh
+          images: registry.uffizzi.com/${{ env.UUID_RESULT }}
+          tags: type=raw,value=24h
+      - name: Build and Push Image to Uffizzi Ephemeral Registry
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          context: .
+
   create-uffizzi-cluster:
-    name: Create Uffizzi Cluster
+    name: Manage Uffizzi Cluster
     runs-on: ubuntu-latest
+    needs: build
 
     steps:
     - name: Checkout
@@ -78,15 +107,3 @@ jobs:
         export UCLUSTER_NAME=`kubectl get namespace --selector="github.com/pull_request.number=${PR_NUMBER}" --output=jsonpath='{.items[*].metadata.name}'`
         echo ${UCLUSTER_NAME} identified
         kubectl delete namespace ${UCLUSTER_NAME}
-
-    # Deploy the Docker image to the GKE cluster
-#    - name: UffizziCluster + Helm
-#      run: |-
-#        ## Set Namespace
-#        export PR_NUMBER=${{github.event.number}}
-#        export NAMESPACE=pr-simple-k8s-app-$PR_NUMBER
-#        export HELM_MANIFEST=$(helm template $PR_NUMBER ./chart -n $NAMESPACE)
-#        yq e '.spec.manifests = strenv(HELM_MANIFEST) |
-#          .metadata.namespace = strenv(NAMESPACE)' uffizzi-cluster.yml > uffizzi-cluster-configured.yml
-#        kubectl create namespace $NAMESPACE
-#        kubectl apply -f uffizzi-cluster-configured.yml
