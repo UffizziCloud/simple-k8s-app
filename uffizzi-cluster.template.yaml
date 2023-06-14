@@ -13,6 +13,7 @@ apiVersion: uffizzi.com/v1alpha1
 kind: UffizziCluster
 metadata:
   name: ${UCLUSTER_NAME}
+  namespace: ${UCLUSTER_NAME}
   labels:
     github.com/pull_request.number: "${PR_NUMBER}"
     app.uffizzi.com/project-id: "3255"
