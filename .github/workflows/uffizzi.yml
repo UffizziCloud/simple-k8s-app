@@ -85,6 +85,8 @@ jobs:
         cat uffizzi-cluster.rendered.yaml #debug
         kubectl apply -f uffizzi-cluster.rendered.yaml
         # TODO: fetch and decode kubeconfig
+        # TODO: wait for secret to exist!
+        #kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode > kubeconfig
         # TODO: deploy sample app
 
     - name: uffizzi cluster connect
@@ -97,6 +99,8 @@ jobs:
         cat uffizzi-cluster.rendered.yaml #debug
         #kubectl apply -f uffizzi-cluster.rendered.yaml
         # TODO: fetch and decode kubeconfig
+        kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode > kubeconfig
+        kubectl --kubeconfig kubeconfig get namespace
         # TODO: re-deploy sample app
 
     - name: uffizzi cluster delete
