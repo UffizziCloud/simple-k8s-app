@@ -97,7 +97,8 @@ jobs:
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
         REPOSITORY=`echo ${{ needs.build.outputs.tags }} | cut -f1 -d':'`
         TAG=`echo ${{ needs.build.outputs.tags }} | cut -f2 -d':'`
-        helm install github-actions ./chart --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig --set image.repository=${REPOSITORY} --set image.tag=${TAG}
+        helm install github-actions ./chart --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig --set image.repository=${REPOSITORY} --set image.tag=${TAG} --set ingress.host=${UCLUSTER_NAME}.uffizzi-client-clone-1.app.qa-gke.uffizzi.com
+
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
         # YOLO
         kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode
@@ -115,7 +116,7 @@ jobs:
         kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get namespace
         # TODO: re-deploy sample app
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
-        helm upgrade github-actions ./chart --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig --set image.repository=${REPOSITORY} --set image.tag=${TAG}
+        helm upgrade github-actions ./chart --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig --set image.repository=${REPOSITORY} --set image.tag=${TAG} --set ingress.host=${UCLUSTER_NAME}.uffizzi-client-clone-1.app.qa-gke.uffizzi.com
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
 
     - name: uffizzi cluster delete
