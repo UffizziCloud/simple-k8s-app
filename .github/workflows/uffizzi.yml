@@ -100,6 +100,7 @@ jobs:
         helm install github-actions ./chart --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig --set image.repository=${REPOSITORY} --set image.tag=${TAG} --set ingress.host=${UCLUSTER_NAME}.uffizzi-client-clone-1.app.qa-gke.uffizzi.com
 
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
+        kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get ingress
         # YOLO
         kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode
 
@@ -120,6 +121,7 @@ jobs:
         TAG=`echo ${{ needs.build.outputs.tags }} | cut -f2 -d':'`
         helm upgrade github-actions ./chart --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig --set image.repository=${REPOSITORY} --set image.tag=${TAG} --set ingress.host=${UCLUSTER_NAME}.uffizzi-client-clone-1.app.qa-gke.uffizzi.com
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
+        kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get ingress
 
     - name: uffizzi cluster delete
       if: ${{ github.event.action == 'closed' }}
