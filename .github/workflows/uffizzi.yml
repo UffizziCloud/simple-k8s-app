@@ -80,6 +80,7 @@ jobs:
 
     - name: uffizzi cluster create
       if: ${{ endsWith(github.event.action, 'opened') }} # "opened" or "reopened"
+      timeout-minutes: 10
       run: |-
         envsubst < uffizzi-cluster.template.yaml > uffizzi-cluster.rendered.yaml
         cat uffizzi-cluster.rendered.yaml #debug
@@ -92,20 +93,25 @@ jobs:
         set -e
         # fetch and decode kubeconfig
         kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode > /tmp/${UCLUSTER_NAME}.kubeconfig
-        # TODO: deploy sample app
+
+        # YOLO
+        cat /tmp/${UCLUSTER_NAME}.kubeconfig
+
+        # debug: confirm connectivity
         kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get namespace
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
+
+        # deploy sample app
         REPOSITORY=`echo ${{ needs.build.outputs.tags }} | cut -f1 -d':'`
         TAG=`echo ${{ needs.build.outputs.tags }} | cut -f2 -d':'`
         helm install github-actions ./chart --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig --set image.repository=${REPOSITORY} --set image.tag=${TAG} --set ingress.host=${UCLUSTER_NAME}.uffizzi-client-clone-1.app.qa-gke.uffizzi.com
 
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
         kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get ingress
-        # YOLO
-        kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode
 
     - name: uffizzi cluster connect
       if: ${{ github.event.action == 'synchronize' }}
+      timeout-minutes: 10
       run: |-
         export UCLUSTER_NAME=`kubectl get namespace --selector="github.com/pull_request.number=${PR_NUMBER}" --output=jsonpath='{.items[*].metadata.name}'`
         echo ${UCLUSTER_NAME} identified
@@ -115,16 +121,19 @@ jobs:
         # fetch and decode kubeconfig
         kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode > /tmp/${UCLUSTER_NAME}.kubeconfig
         kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get namespace
-        # TODO: re-deploy sample app
+
+        # re-deploy sample app
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
         REPOSITORY=`echo ${{ needs.build.outputs.tags }} | cut -f1 -d':'`
         TAG=`echo ${{ needs.build.outputs.tags }} | cut -f2 -d':'`
         helm upgrade github-actions ./chart --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig --set image.repository=${REPOSITORY} --set image.tag=${TAG} --set ingress.host=${UCLUSTER_NAME}.uffizzi-client-clone-1.app.qa-gke.uffizzi.com
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
+        # dump list of Ingresses within uCluster
         kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get ingress
 
     - name: uffizzi cluster delete
       if: ${{ github.event.action == 'closed' }}
+      timeout-minutes: 5
       run: |-
         export UCLUSTER_NAME=`kubectl get namespace --selector="github.com/pull_request.number=${PR_NUMBER}" --output=jsonpath='{.items[*].metadata.name}'`
         echo ${UCLUSTER_NAME} identified
