@@ -116,6 +116,8 @@ jobs:
         kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get namespace
         # TODO: re-deploy sample app
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
+        REPOSITORY=`echo ${{ needs.build.outputs.tags }} | cut -f1 -d':'`
+        TAG=`echo ${{ needs.build.outputs.tags }} | cut -f2 -d':'`
         helm upgrade github-actions ./chart --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig --set image.repository=${REPOSITORY} --set image.tag=${TAG} --set ingress.host=${UCLUSTER_NAME}.uffizzi-client-clone-1.app.qa-gke.uffizzi.com
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
 
