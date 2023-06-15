@@ -109,15 +109,14 @@ jobs:
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
         kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get ingress
 
-    - name: uffizzi cluster connect
+    - name: uffizzi cluster update-kubeconfig
       if: ${{ github.event.action == 'synchronize' }}
       timeout-minutes: 10
       run: |-
+        # identify existing uCluster
         export UCLUSTER_NAME=`kubectl get namespace --selector="github.com/pull_request.number=${PR_NUMBER}" --output=jsonpath='{.items[*].metadata.name}'`
         echo ${UCLUSTER_NAME} identified
-        envsubst < uffizzi-cluster.template.yaml > uffizzi-cluster.rendered.yaml
-        cat uffizzi-cluster.rendered.yaml #debug
-        #kubectl apply -f uffizzi-cluster.rendered.yaml
+
         # fetch and decode kubeconfig
         kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode > /tmp/${UCLUSTER_NAME}.kubeconfig
         kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get namespace
