@@ -89,6 +89,7 @@ jobs:
         # wait for secret to exist!
         READY=1
         until [ $READY -eq 0 ]; do kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME}; READY=$?; sleep 10; done
+        set -e
         # fetch and decode kubeconfig
         kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode > /tmp/${UCLUSTER_NAME}.kubeconfig
         # TODO: deploy sample app
@@ -98,11 +99,12 @@ jobs:
         TAG=`echo ${{ needs.build.outputs.tags }} | cut -f2 -d':'`
         helm install github-actions ./chart --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig --set image.repository=${REPOSITORY} --set image.tag=${TAG}
         helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
+        # YOLO
+        kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode
 
     - name: uffizzi cluster connect
       if: ${{ github.event.action == 'synchronize' }}
       run: |-
-        echo TODO
         export UCLUSTER_NAME=`kubectl get namespace --selector="github.com/pull_request.number=${PR_NUMBER}" --output=jsonpath='{.items[*].metadata.name}'`
         echo ${UCLUSTER_NAME} identified
         envsubst < uffizzi-cluster.template.yaml > uffizzi-cluster.rendered.yaml
