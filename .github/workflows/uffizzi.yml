@@ -84,10 +84,14 @@ jobs:
         envsubst < uffizzi-cluster.template.yaml > uffizzi-cluster.rendered.yaml
         cat uffizzi-cluster.rendered.yaml #debug
         kubectl apply -f uffizzi-cluster.rendered.yaml
-        # TODO: fetch and decode kubeconfig
-        # TODO: wait for secret to exist!
-        #kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode > kubeconfig
+        # wait for secret to exist!
+        READY=1
+        until [ $READY -eq 0 ]; do kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME}; READY=$?; sleep 10; done
+        # fetch and decode kubeconfig
+        kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode > /tmp/${UCLUSTER_NAME}.kubeconfig
         # TODO: deploy sample app
+        kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get namespace
+        helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
 
     - name: uffizzi cluster connect
       if: ${{ github.event.action == 'synchronize' }}
