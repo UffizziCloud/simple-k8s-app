@@ -98,10 +98,11 @@ jobs:
         envsubst < uffizzi-cluster.template.yaml > uffizzi-cluster.rendered.yaml
         cat uffizzi-cluster.rendered.yaml #debug
         #kubectl apply -f uffizzi-cluster.rendered.yaml
-        # TODO: fetch and decode kubeconfig
-        kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode > kubeconfig
-        kubectl --kubeconfig kubeconfig get namespace
+        # fetch and decode kubeconfig
+        kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode > /tmp/${UCLUSTER_NAME}.kubeconfig
+        kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get namespace
         # TODO: re-deploy sample app
+        helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
 
     - name: uffizzi cluster delete
       if: ${{ github.event.action == 'closed' }}
