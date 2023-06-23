@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${UCLUSTER_NAME}
+  labels:
+    github.com/pull_request.number: "${PR_NUMBER}"
+    app.uffizzi.com/project-id: "3255"
+    app.uffizzi.com/project-name: "Example_Project"
+    app.uffizzi.com/user-id: "3465"
+    app.uffizzi.com/user-name: "uffizzi.userATexample.com"
+---
+apiVersion: uffizzi.com/v1alpha1
+kind: UffizziCluster
+metadata:
+  name: ${UCLUSTER_NAME}
+  namespace: ${UCLUSTER_NAME}
+  labels:
+    github.com/pull_request.number: "${PR_NUMBER}"
+    app.uffizzi.com/project-id: "3255"
+    app.uffizzi.com/project-name: "Example_Project"
+    app.uffizzi.com/user-id: "3465"
+    app.uffizzi.com/user-name: "uffizzi.userATexample.com"
+spec:
+  ingress:
+    class: "nginx"
+    host: ${UCLUSTER_NAME}.${GKE_CLUSTER}.app.qa-gke.uffizzi.com

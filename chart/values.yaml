@@ -1,3 +1,6 @@
 image:
   repository: docker.io/uffizzi/echo-test
   tag: v1.0.0
+
+ingress:
+  host: echo-test.example.com

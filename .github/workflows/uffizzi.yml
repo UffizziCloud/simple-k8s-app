@@ -1,4 +1,4 @@
-name: Create UffizziCluster on PullRequest
+name: Manage UffizziCluster for Pull Requests
 
 permissions:
   id-token: write
@@ -6,59 +6,134 @@ permissions:
 
 on:
   pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
     branches: [ main ]
 
 env:
+  # These are all temporary for this proof-of-concept.
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
   GKE_CLUSTER: uffizzi-client-clone-1    # Add your cluster name here.
   GKE_ZONE: us-central1   # Add your cluster zone here.
-  USE_GKE_GCLOUD_AUTH_PLUGIN: true
+  #USE_GKE_GCLOUD_AUTH_PLUGIN: true
+  # Once finished, this workflow will include Uffizzi credentials instead of GCP.
+
+  # In practice, clusters will probably get a unique ID and the workflow will identify them using metadata.
+  UCLUSTER_NAME: cluster-${{ github.run_id }}
+  PR_NUMBER: ${{ github.event.number }}
 
 jobs:
-  create-uffizzi-cluster:
-    name: Create Uffizzi Cluster
+  build:
+    name: Build and Push Image
     runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Generate UUID image name
+      id: uuid
+      run: echo "UUID_RESULT=$(uuidgen)" >> $GITHUB_ENV
+    - name: Docker metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        # An anonymous, emphemeral registry built on ttl.sh
+        images: registry.uffizzi.com/${{ env.UUID_RESULT }}
+        tags: type=raw,value=24h
+    - name: Build and Push Image to Uffizzi Ephemeral Registry
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        context: .
+
+  create-uffizzi-cluster:
+    name: Manage Uffizzi Cluster
+    runs-on: ubuntu-latest
+    needs: build
 
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Run a test for gcloud components
-      run: |
-        gcloud components list
-        echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-        curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
-        sudo apt update
-        sudo apt-get install google-cloud-sdk-gke-gcloud-auth-plugin
-        echo "##vso[task.setvariable variable=USE_GKE_GCLOUD_AUTH_PLUGIN]True"
-        gcloud components list
-
-
-    # Setup gcloud CLI
-    - uses: google-github-actions/setup-gcloud@1bee7de035d65ec5da40a31f8589e240eba8fde5
-      with:
-        service_account_key: ${{ secrets.GKE_SA_KEY }}
-        project_id: ${{ secrets.GKE_PROJECT }}
-
-    # Configure Docker to use the gcloud command-line tool as a credential
-    # helper for authentication
     - id: 'auth'
       name: 'Authenticate to Google Cloud'
       uses: 'google-github-actions/auth@v1'
       with:
         credentials_json: '${{ secrets.GKE_SA_KEY }}'
+        project_id: ${{ env.PROJECT_ID }}
 
-    - run: |-
-        gcloud container clusters get-credentials uffizzi-client-clone-1 --zone us-central1 --project uffizzi-pro-qa-gke
+    - name: Set up `gcloud` CLI
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ env.PROJECT_ID }}
+        install_components: 'gke-gcloud-auth-plugin'
 
-    # Deploy the Docker image to the GKE cluster
-    - name: UffizziCluster + Helm
+    - name: Get credentials to connect to host GKE Cluster
       run: |-
-        ## Set Namespace
-        export PR_NUMBER=${{github.event.number}}
-        export NAMESPACE=pr-simple-k8s-app-$PR_NUMBER
-        export HELM_MANIFEST=$(helm template $PR_NUMBER ./chart -n $NAMESPACE)
-        yq e '.spec.manifests = strenv(HELM_MANIFEST) |
-          .metadata.namespace = strenv(NAMESPACE)' uffizzi-cluster.yml > uffizzi-cluster-configured.yml
-        kubectl create namespace $NAMESPACE
-        kubectl apply -f uffizzi-cluster-configured.yml
+        gcloud container clusters get-credentials ${GKE_CLUSTER} --zone ${GKE_ZONE} --project ${PROJECT_ID}
+
+    - name: uffizzi cluster create
+      if: ${{ endsWith(github.event.action, 'opened') }} # "opened" or "reopened"
+      timeout-minutes: 10
+      run: |-
+        envsubst < uffizzi-cluster.template.yaml > uffizzi-cluster.rendered.yaml
+        cat uffizzi-cluster.rendered.yaml #debug
+        kubectl apply -f uffizzi-cluster.rendered.yaml
+        # do not exit upon any non-zero exit status (for `until` loop below.)
+        set +e
+        # wait for secret to exist!
+        READY=1
+        until [ $READY -eq 0 ]; do kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME}; READY=$?; sleep 10; done
+        set -e
+        # fetch and decode kubeconfig
+        kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode > /tmp/${UCLUSTER_NAME}.kubeconfig
+
+        # YOLO
+        cat /tmp/${UCLUSTER_NAME}.kubeconfig
+
+        # debug: confirm connectivity
+        kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get namespace
+        helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
+
+        # deploy sample app
+        REPOSITORY=`echo ${{ needs.build.outputs.tags }} | cut -f1 -d':'`
+        TAG=`echo ${{ needs.build.outputs.tags }} | cut -f2 -d':'`
+        helm install github-actions ./chart --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig --set image.repository=${REPOSITORY} --set image.tag=${TAG} --set ingress.host=${UCLUSTER_NAME}.uffizzi-client-clone-1.app.qa-gke.uffizzi.com
+
+        helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
+        kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get ingress
+
+    - name: uffizzi cluster update-kubeconfig
+      if: ${{ github.event.action == 'synchronize' }}
+      timeout-minutes: 10
+      run: |-
+        # identify existing uCluster
+        export UCLUSTER_NAME=`kubectl get namespace --selector="github.com/pull_request.number=${PR_NUMBER}" --output=jsonpath='{.items[*].metadata.name}'`
+        echo ${UCLUSTER_NAME} identified
+
+        # fetch and decode kubeconfig
+        kubectl get secret vc-uc-${UCLUSTER_NAME} --namespace ${UCLUSTER_NAME} --output=jsonpath='{.data.config}' | base64 --decode > /tmp/${UCLUSTER_NAME}.kubeconfig
+        kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get namespace
+
+        # re-deploy sample app
+        helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
+        REPOSITORY=`echo ${{ needs.build.outputs.tags }} | cut -f1 -d':'`
+        TAG=`echo ${{ needs.build.outputs.tags }} | cut -f2 -d':'`
+        helm upgrade github-actions ./chart --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig --set image.repository=${REPOSITORY} --set image.tag=${TAG} --set ingress.host=${UCLUSTER_NAME}.uffizzi-client-clone-1.app.qa-gke.uffizzi.com
+        helm --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig list
+        # dump list of Ingresses within uCluster
+        kubectl --kubeconfig /tmp/${UCLUSTER_NAME}.kubeconfig get ingress
+
+    - name: uffizzi cluster delete
+      if: ${{ github.event.action == 'closed' }}
+      timeout-minutes: 5
+      run: |-
+        export UCLUSTER_NAME=`kubectl get namespace --selector="github.com/pull_request.number=${PR_NUMBER}" --output=jsonpath='{.items[*].metadata.name}'`
+        echo ${UCLUSTER_NAME} identified
+        kubectl delete namespace ${UCLUSTER_NAME}
